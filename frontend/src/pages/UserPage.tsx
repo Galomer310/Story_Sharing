@@ -1,4 +1,3 @@
-// frontend/src/pages/UserPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -13,29 +12,27 @@ interface Comment {
   user_id: number;
   comment_text: string;
   created_at: string;
-  username: string; // from the JOIN with users
+  username: string;
 }
 
-// We'll store comments in local component state (not in Redux) for simplicity
-// But you could create a commentSlice if you prefer.
 const UserPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  // Current logged-in user
   const user = useSelector(selectCurrentUser);
-  // All stories from Redux
   const stories = useSelector(selectAllStories);
 
-  // For each story, we store an array of comments
-  const [commentsMap, setCommentsMap] = useState<Record<number, Comment[]>>({});
+  // Local state for ordering stories
+  const [storyOrder, setStoryOrder] = useState<"date" | "updated" | "author">(
+    "date"
+  );
 
-  // For new comment text
+  // Comments stored per story (key = story.id)
+  const [commentsMap, setCommentsMap] = useState<Record<number, Comment[]>>({});
   const [newCommentText, setNewCommentText] = useState<Record<number, string>>(
     {}
   );
 
-  // For editing a comment
   const [editCommentId, setEditCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
 
@@ -44,14 +41,13 @@ const UserPage: React.FC = () => {
     dispatch(fetchStories());
   }, [dispatch]);
 
-  // Whenever stories change, fetch comments for each story
+  // Fetch comments for each story
   useEffect(() => {
     const fetchCommentsForStory = async (storyId: number) => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
         const token = localStorage.getItem("accessToken");
         if (!token) return;
-
         const res = await fetch(`${apiUrl}/api/comments/${storyId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -63,24 +59,35 @@ const UserPage: React.FC = () => {
         console.error("Error fetching comments:", error);
       }
     };
-
-    // Fetch comments for each story
     stories.forEach((story: Story) => {
       fetchCommentsForStory(story.id);
     });
   }, [stories]);
 
-  // Handle new comment
+  // Reorder stories based on selected order
+  const orderedStories = [...stories].sort((a, b) => {
+    if (storyOrder === "date") {
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    } else if (storyOrder === "updated") {
+      // Assuming updated_at is available on the story object
+      return (
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+    } else {
+      return a.author_username.localeCompare(b.author_username);
+    }
+  });
+
+  // Add a new comment to a story
   const handleAddComment = async (storyId: number) => {
     const text = newCommentText[storyId]?.trim();
     if (!text) return alert("Comment cannot be empty.");
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        alert("No token found. Please log in again.");
-        return;
-      }
+      if (!token) return alert("No token found. Please log in again.");
       const response = await fetch(`${apiUrl}/api/comments`, {
         method: "POST",
         headers: {
@@ -105,25 +112,17 @@ const UserPage: React.FC = () => {
     }
   };
 
-  // Handle edit start
   const startEditComment = (commentId: number, currentText: string) => {
     setEditCommentId(commentId);
     setEditCommentText(currentText);
   };
 
-  // Handle edit save
   const handleSaveComment = async (storyId: number) => {
-    if (!editCommentText.trim()) {
-      alert("Comment cannot be empty.");
-      return;
-    }
+    if (!editCommentText.trim()) return alert("Comment cannot be empty.");
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        alert("No token found. Please log in again.");
-        return;
-      }
+      if (!token) return alert("No token found. Please log in again.");
       const response = await fetch(`${apiUrl}/api/comments/${editCommentId}`, {
         method: "PUT",
         headers: {
@@ -138,7 +137,6 @@ const UserPage: React.FC = () => {
         return;
       }
       const updatedComment = await response.json();
-      // Update local state
       setCommentsMap((prev) => {
         const updated = prev[storyId].map((c) =>
           c.id === updatedComment.id ? updatedComment : c
@@ -152,15 +150,11 @@ const UserPage: React.FC = () => {
     }
   };
 
-  // Handle delete comment
   const handleDeleteComment = async (storyId: number, commentId: number) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        alert("No token found. Please log in again.");
-        return;
-      }
+      if (!token) return alert("No token found. Please log in again.");
       const response = await fetch(`${apiUrl}/api/comments/${commentId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -187,9 +181,21 @@ const UserPage: React.FC = () => {
       </button>
       <button onClick={() => navigate("/messages")}>Messages</button>
 
+      <div style={{ margin: "1rem 0" }}>
+        <label>Order stories by: </label>
+        <select
+          value={storyOrder}
+          onChange={(e) => setStoryOrder(e.target.value as any)}
+        >
+          <option value="date">Date (Newest First)</option>
+          <option value="updated">Last Updated</option>
+          <option value="author">Author Name (A-Z)</option>
+        </select>
+      </div>
+
       <h3>All Users' Stories</h3>
-      {stories && stories.length > 0 ? (
-        stories.map((story) => {
+      {orderedStories && orderedStories.length > 0 ? (
+        orderedStories.map((story) => {
           const storyComments = commentsMap[story.id] || [];
           return (
             <div
@@ -221,19 +227,12 @@ const UserPage: React.FC = () => {
               )}
 
               {/* Comment Section */}
-              <div
-                style={{
-                  marginTop: "1rem",
-                  padding: "0.5rem",
-                  background: "#fafafa",
-                }}
-              >
+              <div className="comment-section">
                 <strong>Comment Section:</strong>
-                <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                <ul>
                   {storyComments.map((comment) => (
-                    <li key={comment.id} style={{ marginTop: "0.5rem" }}>
+                    <li key={comment.id}>
                       {editCommentId === comment.id ? (
-                        // Edit mode
                         <div>
                           <textarea
                             value={editCommentText}
@@ -253,7 +252,6 @@ const UserPage: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        // View mode
                         <div>
                           <strong>{comment.username}:</strong>{" "}
                           {comment.comment_text}
@@ -261,7 +259,6 @@ const UserPage: React.FC = () => {
                           <small>
                             {new Date(comment.created_at).toLocaleString()}
                           </small>
-                          {/* If this user wrote the comment, show edit/delete */}
                           {user && user.id === comment.user_id && (
                             <>
                               <button
@@ -288,8 +285,7 @@ const UserPage: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-                {/* New comment form */}
-                <div style={{ marginTop: "0.5rem" }}>
+                <div>
                   <textarea
                     rows={2}
                     placeholder="Add a comment..."

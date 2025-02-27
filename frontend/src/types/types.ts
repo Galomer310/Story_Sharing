@@ -14,6 +14,7 @@ export interface User {
     background_color: string;
     author_username: string;
     created_at: string;
+    updated_at: string;
     user_role: 'author' | 'none';
   }
   

@@ -53,3 +53,31 @@ export const getMessages = async (req: Request, res: Response, next: NextFunctio
     next(error);
   }
 };
+
+/**
+ * Delete a message.
+ * Allows deletion if the logged-in user is either the sender or receiver.
+ */
+export const deleteMessage = async (req: Request, res: Response, next: NextFunction) => {
+  const { messageId } = req.params;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(403).json({ error: 'User not authenticated' });
+  }
+  try {
+    // First, check if the message exists and belongs to the user.
+    const check = await pool.query('SELECT * FROM private_messages WHERE id = $1', [messageId]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+    const message = check.rows[0];
+    if (message.sender_id !== userId && message.receiver_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized to delete this message' });
+    }
+    await pool.query('DELETE FROM private_messages WHERE id = $1', [messageId]);
+    res.json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    console.error('Delete message error:', error);
+    next(error);
+  }
+};
