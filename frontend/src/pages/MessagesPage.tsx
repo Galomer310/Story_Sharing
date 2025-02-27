@@ -21,12 +21,9 @@ const MessagesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [orderCriteria, setOrderCriteria] = useState<"date" | "sender">("date");
   const [showSendForm, setShowSendForm] = useState(false);
-
-  // For sending a new message
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [messageText, setMessageText] = useState("");
-  // For replying: if reply is triggered, prefill selectedUserId with sender's id.
   const [replyTo, setReplyTo] = useState<User | null>(null);
 
   const navigate = useNavigate();
@@ -70,14 +67,13 @@ const MessagesPage: React.FC = () => {
     }
   });
 
-  // Fetch user list for sending messages when the form is opened
+  // Show/hide send message form; optionally prefill for reply
   const handleShowSendForm = async (prefillUserId: number | null = null) => {
     setShowSendForm((prev) => !prev);
     if (prefillUserId) {
       setSelectedUserId(prefillUserId);
     }
     if (!showSendForm) {
-      // Just opened the form: fetch user list
       try {
         if (!token) {
           alert("No token found. Please log in again.");
@@ -91,7 +87,6 @@ const MessagesPage: React.FC = () => {
           throw new Error(errorData.error || "Failed to fetch user list");
         }
         const userList = await response.json();
-        // Optional: remove current user from list (if desired)
         setUsers(userList);
       } catch (error) {
         console.error("Error fetching user list:", error);
@@ -99,7 +94,7 @@ const MessagesPage: React.FC = () => {
     }
   };
 
-  // Send the message
+  // Send a message with extra alert
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId || !messageText.trim()) {
@@ -127,12 +122,13 @@ const MessagesPage: React.FC = () => {
         alert(errorData.error || "Failed to send message");
         return;
       }
-      alert("Message sent!");
+      alert(
+        "Message sent! Sent messages will be visible until you leave the private messages area."
+      );
       setShowSendForm(false);
       setSelectedUserId(null);
       setMessageText("");
       setReplyTo(null);
-      // Optionally, re-fetch messages or update state with the new message
       const newMessage = await response.json();
       setMessages((prev) => [newMessage, ...prev]);
     } catch (error) {
@@ -163,7 +159,7 @@ const MessagesPage: React.FC = () => {
     }
   };
 
-  // Reply to a message: open send form prefilled with sender's id
+  // Reply to a message
   const handleReply = (senderId: number, senderUsername: string) => {
     setReplyTo({ id: senderId, username: senderUsername });
     handleShowSendForm(senderId);
@@ -193,13 +189,11 @@ const MessagesPage: React.FC = () => {
             onChange={(e) => setSelectedUserId(Number(e.target.value))}
           >
             <option value="">-- Select --</option>
-            {users
-              .filter((u) => !replyTo || u.id === replyTo.id || true) // Optionally filter out self
-              .map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.username}
-                </option>
-              ))}
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.username}
+              </option>
+            ))}
           </select>
           <br />
           <label>Message Text:</label>
