@@ -180,6 +180,7 @@ const UserPage: React.FC = () => {
         Create New Story
       </button>
       <button onClick={() => navigate("/messages")}>Messages</button>
+      <button onClick={() => navigate("/")}>Log Out</button>
 
       <div style={{ margin: "1rem 0" }}>
         <label>Order stories by: </label>
@@ -207,15 +208,9 @@ const UserPage: React.FC = () => {
               }}
             >
               <h4>{story.title}</h4>
-              <p>Story by {story.author_username}</p>
+              <h5>Story by: {story.author_username}</h5>
               <p>{story.content}</p>
-              <div
-                style={{
-                  textAlign: "right",
-                  fontSize: "0.8rem",
-                  color: "#555",
-                }}
-              >
+              <div className="story-date">
                 {new Date(story.created_at).toLocaleString()}
               </div>
               {story.user_role === "author" && (
@@ -308,7 +303,6 @@ const UserPage: React.FC = () => {
       ) : (
         <p>No stories available.</p>
       )}
-      <button onClick={() => navigate("/")}>Back to Home</button>
     </div>
   );
 };

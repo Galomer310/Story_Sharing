@@ -78,6 +78,7 @@ const CreateStoryPage: React.FC = () => {
         />
         <label>Select Background Color:</label>
         <select
+          className="select-color"
           value={backgroundColor}
           onChange={(e) => setBackgroundColor(e.target.value)}
         >

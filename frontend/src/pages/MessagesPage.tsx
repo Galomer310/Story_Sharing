@@ -222,6 +222,7 @@ const MessagesPage: React.FC = () => {
                 <strong>Message:</strong> {msg.message_text}
               </div>
               <div>
+                <strong>Message Sent At:</strong>
                 <small>{new Date(msg.created_at).toLocaleString()}</small>
               </div>
               <div className="message-actions">
