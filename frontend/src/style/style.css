@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+  }
+  
+  .home-container,
+  .login-container,
+  .register-container,
+  .user-container,
+  .create-story,
+  .edit-story-container,
+  .messages-container {
+    padding: 1rem;
+  }
+  
+  .storyBox {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+  
