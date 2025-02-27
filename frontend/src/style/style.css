@@ -140,6 +140,13 @@ select {
   background-color: #eef;
   border-radius: 10px;
 }
+
+.comment-section li:hover {
+  background-color: #fff;
+  transform: scale(1.01);
+  transition: transform 0.2s ease;
+  border-radius: 20px;
+}
 .comment-section ul {
   list-style: none;
   padding-left: 0;
