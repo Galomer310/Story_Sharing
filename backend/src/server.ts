@@ -15,9 +15,15 @@ const app = express();
 
 // CORS config
 const allowedOrigins = [
-  'http://localhost:5173', // Vite dev server
-  // Add your deployed frontend origin if needed
+  "https://story-sharing-site.onrender.com" // your frontend's origin
 ];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
+
 app.use(
   cors({
     origin: allowedOrigins,
