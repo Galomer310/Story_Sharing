@@ -36,6 +36,11 @@ const UserPage: React.FC = () => {
   const [editCommentId, setEditCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
 
+  // New state to track which stories are expanded (for "read more" functionality)
+  const [expandedStories, setExpandedStories] = useState<
+    Record<number, boolean>
+  >({});
+
   useEffect(() => {
     dispatch(fetchUser());
     dispatch(fetchStories());
@@ -173,6 +178,11 @@ const UserPage: React.FC = () => {
     }
   };
 
+  // Toggle the expanded state for a story
+  const toggleExpand = (storyId: number) => {
+    setExpandedStories((prev) => ({ ...prev, [storyId]: !prev[storyId] }));
+  };
+
   return (
     <div className="user-container">
       <h1>Welcome, {user ? user.username : "loading..."}</h1>
@@ -198,6 +208,11 @@ const UserPage: React.FC = () => {
       {orderedStories && orderedStories.length > 0 ? (
         orderedStories.map((story) => {
           const storyComments = commentsMap[story.id] || [];
+          const isLong = story.content.length > 250;
+          const displayedContent =
+            isLong && !expandedStories[story.id]
+              ? story.content.substring(0, 250) + "..."
+              : story.content;
           return (
             <div
               key={story.id}
@@ -209,16 +224,19 @@ const UserPage: React.FC = () => {
             >
               <h4>{story.title}</h4>
               <h5>Story by: {story.author_username}</h5>
-              <p>{story.content}</p>
+              <p>{displayedContent}</p>
+              {isLong && (
+                <button id="story-btn" onClick={() => toggleExpand(story.id)}>
+                  {expandedStories[story.id] ? "Read less" : "Read more"}
+                </button>
+              )}
               <div className="story-date">
                 {new Date(story.created_at).toLocaleString()}
               </div>
               {story.user_role === "author" && (
-                <>
-                  <button onClick={() => navigate(`/edit-story/${story.id}`)}>
-                    Edit
-                  </button>
-                </>
+                <button onClick={() => navigate(`/edit-story/${story.id}`)}>
+                  Edit
+                </button>
               )}
 
               {/* Comment Section */}

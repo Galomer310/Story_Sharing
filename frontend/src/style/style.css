@@ -80,6 +80,9 @@ select {
   margin-bottom: 0.5rem;
   font-weight: bold;
 }
+.user-container h1{
+  text-align: center;
+}
 
 
 /* Story Box */
@@ -97,7 +100,7 @@ select {
   transition: transform 0.2s ease;
 }
 .storyBox h5:hover {
-  color: red;
+  color: rgba(255, 6, 6, 0.8);
 }
 .storyBox h4 {
   text-align: center;
@@ -111,6 +114,12 @@ select {
   margin: 0.5rem;
   font-size: 1.2rem;
   color: #333333;
+}
+#story-btn {
+  background-color: #77777745;
+}
+#story-btn:hover {
+  background-color: #575757;
 }
 
 .story-date {
